@@ -9,14 +9,14 @@
       <!-- Statistics Display -->
       <div class="stats-card">
         <div class="text-center">
-          <div class="stat-number">
+          <div
+            class="stat-number"
+            :title="`${vouchersPurchased} of ${goalVouchers} vouchers purchased`"
+          >
             {{ supportPercentage }}%
           </div>
           <div class="stat-label">
             of Faculty & Staff supported
-          </div>
-          <div class="stat-sublabel">
-            {{ vouchersPurchased }} of {{ goalVouchers }} vouchers purchased
           </div>
         </div>
       </div>
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Testing Control -->
-      <div class="control-card">
+      <div v-if="isTestMode" class="control-card">
         <label class="control-label">
           TEST: Vouchers Purchased
         </label>
@@ -76,18 +76,173 @@
           </button>
         </div>
       </div>
+
+      <!-- Footer with Refresh Info -->
+      <div class="footer-card">
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+        <div class="footer-content">
+          <div class="last-updated">
+            <span v-if="isLoading" class="loading-text">Loading...</span>
+            <span v-else-if="lastRefreshed" class="update-time">
+              Last updated: {{ formatDate(lastRefreshed) }}
+            </span>
+          </div>
+          <button
+            @click="handleRefresh"
+            :disabled="isLoading"
+            class="refresh-btn"
+            :class="{ 'refreshing': isLoading }"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="refresh-icon"
+            >
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import TeacherIcon from './TeacherIcon.vue'
 
 const totalIcons = 100
 const goalVouchers = 220
-const vouchersPurchased = ref(110) // Start at 50%
+const vouchersPurchased = ref(0)
 const iconSize = 40
+const isLoading = ref(true)
+const lastRefreshed = ref(null)
+const errorMessage = ref(null)
+
+// Check if test mode is enabled via query parameter
+const isTestMode = ref(false)
+if (typeof window !== 'undefined') {
+  const urlParams = new URLSearchParams(window.location.search)
+  isTestMode.value = urlParams.get('test') === '1'
+}
+
+const API_URL = import.meta.env.VITE_API_URL
+const CACHE_KEY = 'teacher_appreciation_data'
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
+
+// Format date for display
+const formatDate = (date) => {
+  return new Date(date).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+// Check if cached data is still valid
+const getCachedData = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (!cached) return null
+
+    const { data, timestamp } = JSON.parse(cached)
+    const now = Date.now()
+
+    // Check if cache is less than 1 hour old
+    if (now - timestamp < CACHE_DURATION) {
+      return { data, timestamp }
+    }
+
+    // Cache expired
+    return null
+  } catch (error) {
+    console.error('Error reading cache:', error)
+    return null
+  }
+}
+
+// Save data to cache
+const setCachedData = (data) => {
+  try {
+    const timestamp = Date.now()
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp }))
+    return timestamp
+  } catch (error) {
+    console.error('Error saving to cache:', error)
+    return Date.now()
+  }
+}
+
+// Fetch voucher data from API
+const fetchVoucherData = async (forceRefresh = false) => {
+  // Check cache first unless forcing refresh
+  if (!forceRefresh) {
+    const cached = getCachedData()
+    if (cached) {
+      vouchersPurchased.value = cached.data.item_count
+      lastRefreshed.value = cached.timestamp
+      isLoading.value = false
+      errorMessage.value = null
+      return
+    }
+  }
+
+  isLoading.value = true
+  errorMessage.value = null
+
+  try {
+    const response = await fetch(API_URL)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Extract item_count from the first product in by_product array
+    const itemCount = data.summary?.by_product?.[0]?.item_count || 0
+
+    vouchersPurchased.value = itemCount
+    const timestamp = setCachedData({ item_count: itemCount })
+    lastRefreshed.value = timestamp
+  } catch (error) {
+    console.error('Error fetching voucher data:', error)
+    errorMessage.value = 'Unable to load voucher data. Using cached data if available.'
+
+    // Try to use cached data even if expired
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached)
+      vouchersPurchased.value = data.item_count
+      lastRefreshed.value = timestamp
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Handle manual refresh
+const handleRefresh = async () => {
+  await fetchVoucherData(true)
+}
+
+// Fetch data on component mount
+onMounted(() => {
+  fetchVoucherData()
+})
 
 // Calculate percentage of goal reached
 const supportPercentage = computed(() => {
@@ -184,6 +339,7 @@ const decrementVouchers = () => {
   color: #c8102e;
   margin-bottom: 0.25rem;
   font-family: 'Nunito Sans', sans-serif;
+  cursor: help;
 }
 
 .stat-label {
@@ -408,6 +564,90 @@ const decrementVouchers = () => {
   color: #c8102e;
 }
 
+.footer-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.last-updated {
+  color: #636363;
+  font-size: 0.875rem;
+}
+
+.loading-text {
+  color: #c8102e;
+  font-weight: 600;
+}
+
+.update-time {
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 20px;
+  background: #c8102e;
+  color: white;
+  border: 2px solid #c8102e;
+  border-radius: 6px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: white;
+  color: #c8102e;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-btn.refreshing .refresh-icon {
+  animation: spin 1s linear infinite;
+}
+
+.refresh-icon {
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 768px) {
   .pictogram-container {
     padding: 0.25rem 0;
@@ -494,6 +734,27 @@ const decrementVouchers = () => {
   .btn {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  .footer-card {
+    padding: 0.75rem;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .last-updated {
+    text-align: center;
+    font-size: 0.75rem;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 13px;
   }
 }
 </style>
