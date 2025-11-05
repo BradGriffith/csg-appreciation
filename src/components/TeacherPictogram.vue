@@ -9,7 +9,12 @@
       <!-- Statistics Display -->
       <div class="stats-card">
         <div class="text-center">
+          <div v-if="isLoading" class="stat-loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text-large">Loading...</div>
+          </div>
           <div
+            v-else
             class="stat-number"
             :title="`${vouchersPurchased} of ${goalVouchers} vouchers purchased`"
           >
@@ -340,6 +345,30 @@ const decrementVouchers = () => {
   margin-bottom: 0.25rem;
   font-family: 'Nunito Sans', sans-serif;
   cursor: help;
+}
+
+.stat-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #c8102e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text-large {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #c8102e;
+  font-family: 'Nunito Sans', sans-serif;
 }
 
 .stat-label {
@@ -676,6 +705,16 @@ const decrementVouchers = () => {
   .stat-number {
     font-size: 2rem;
     margin-bottom: 0.1rem;
+  }
+
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border-width: 3px;
+  }
+
+  .loading-text-large {
+    font-size: 1.125rem;
   }
 
   .stat-label {
