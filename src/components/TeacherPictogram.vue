@@ -41,6 +41,24 @@
         </div>
       </div>
 
+      <!-- Buy Vouchers Button -->
+      <div class="cta-section">
+        <a
+          href="https://csg-unicorner.myshopify.com/products/sponsor-a-teacher-voucher"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="buy-vouchers-btn"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          Buy Vouchers Now
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </a>
+      </div>
+
       <!-- Testing Control -->
       <div v-if="isTestMode" class="control-card">
         <label class="control-label">
@@ -83,47 +101,45 @@
       </div>
 
       <!-- Footer with Refresh Info -->
-      <div class="footer-card">
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
+      <div v-if="errorMessage" class="error-message-banner">
+        {{ errorMessage }}
+      </div>
+      <div class="footer-section">
+        <div class="last-updated">
+          <span v-if="isLoading" class="loading-text">Loading...</span>
+          <span v-else-if="lastRefreshed" class="update-time">
+            Last updated: {{ formatDate(lastRefreshed) }}
+          </span>
         </div>
-        <div class="footer-content">
-          <div class="last-updated">
-            <span v-if="isLoading" class="loading-text">Loading...</span>
-            <span v-else-if="lastRefreshed" class="update-time">
-              Last updated: {{ formatDate(lastRefreshed) }}
-            </span>
-          </div>
-          <button
-            @click="handleRefresh"
-            :disabled="isLoading"
-            class="refresh-btn"
-            :class="{ 'refreshing': isLoading }"
+        <button
+          @click="handleRefresh"
+          :disabled="isLoading"
+          class="refresh-btn"
+          :class="{ 'refreshing': isLoading }"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="refresh-icon"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="refresh-icon"
-            >
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-            </svg>
-            {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
-          </button>
-        </div>
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          {{ isLoading ? 'Refreshing...' : 'Refresh' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import TeacherIcon from './TeacherIcon.vue'
 
 const totalIcons = 100
@@ -395,8 +411,76 @@ const decrementVouchers = () => {
   justify-content: center;
 }
 
-.icon-item {
-  /* Icons size themselves naturally */
+.cta-section {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.buy-vouchers-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 40px;
+  background: linear-gradient(135deg, #ffc600 0%, #ffb700 100%);
+  color: #242424;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(255, 198, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border: none;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.buy-vouchers-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.buy-vouchers-btn:hover::before {
+  opacity: 1;
+}
+
+.buy-vouchers-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 198, 0, 0.5);
+}
+
+.buy-vouchers-btn:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 4px 12px rgba(255, 198, 0, 0.3);
+}
+
+.heart-icon {
+  animation: heartbeat 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.buy-vouchers-btn:hover .heart-icon {
+  animation: heartbeat 0.6s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  10%, 30% {
+    transform: scale(1.1);
+  }
+  20%, 40% {
+    transform: scale(1);
+  }
 }
 
 .control-card {
@@ -593,15 +677,7 @@ const decrementVouchers = () => {
   color: #c8102e;
 }
 
-.footer-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  margin-top: 1rem;
-}
-
-.error-message {
+.error-message-banner {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #991b1b;
@@ -612,21 +688,23 @@ const decrementVouchers = () => {
   font-weight: 600;
 }
 
-.footer-content {
+.footer-section {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
-  flex-wrap: wrap;
+  padding: 1rem 0;
+  margin-top: 1rem;
 }
 
 .last-updated {
-  color: #636363;
-  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-family: 'Nunito Sans', sans-serif;
 }
 
 .loading-text {
-  color: #c8102e;
+  color: #ffc600;
   font-weight: 600;
 }
 
@@ -637,26 +715,26 @@ const decrementVouchers = () => {
 .refresh-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 10px 20px;
-  background: #c8102e;
+  gap: 0.35rem;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: 2px solid #c8102e;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
   font-family: 'Nunito Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: white;
-  color: #c8102e;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .refresh-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -775,25 +853,38 @@ const decrementVouchers = () => {
     font-size: 12px;
   }
 
-  .footer-card {
-    padding: 0.75rem;
+  .cta-section {
+    margin: 1.5rem 0;
   }
 
-  .footer-content {
+  .buy-vouchers-btn {
+    padding: 14px 28px;
+    font-size: 1.0rem;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+
+  .heart-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .footer-section {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
   }
 
   .last-updated {
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
   }
 
   .refresh-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 10px 16px;
-    font-size: 13px;
+    font-size: 0.7rem;
+    padding: 5px 10px;
   }
 }
 </style>
